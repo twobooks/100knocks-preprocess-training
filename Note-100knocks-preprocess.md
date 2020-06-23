@@ -1,3 +1,39 @@
+strアクセサ,dtアクセサでSeriesを処理する
+===
+```python
+filter = df_store["tel_no"].str.contains("^[0-9]{3}-[0-9]{3}-[0-9]{4}$",regex = True)
+df_store[filter]
+
+pd.to_datetime(df_receipt["sales_epoch"],unit='s',origin='unix').dt.strftime("%m")
+# queryでも使える
+tmp = df_receipt.query("not customer_id.str.startswith('Z')",engine="python")
+```
+
+重複するデータの処理(duplicated)
+===
+- duplicated()を使うと重複してるデータがTrueとなるdfを返す
+- 残す行を選択: 引数keep="first" or "last"
+- 重複を判定する列を指定: 引数subset="columns"
+- 重複した行の数をカウント.value_counts()を使うと個数を確認できる。
+```python
+# 論理否定演算子「~」を使って重複行を除くことができる
+tmp = df[~df.duplicated()]
+# drop_duplicates()でも除くことができる
+df.drop_duplicates()
+df_cnt = df_receipt[~df_receipt.duplicated(subset=['customer_id', 'sales_ymd'])]
+```
+
+条件に合致するdfを取得(df.query)
+====
+- df_hoge[df_hoge["any"] == some]でもいい
+- df.queryの方が直感的でいいかも
+- engine="python" を忘れがち
+```python
+tmp = tmp.query("customer_id == 'CS018205000001' & amount >= 1000")
+tmp = tmp.query("customer_id == 'CS018205000001' & (amount >= 1000 | quantity >= 5)")
+tmp = df_receipt.query("not customer_id.str.startswith('Z')",engine="python")
+```
+
 dfの結合(concat)
 ====
 - indexをキーとする場合はconcatでOK
@@ -44,9 +80,9 @@ Seriesに関数を適用(apply)
 tmp["era"] = tmp["age"].apply(lambda x:math.floor(x/10)*10)
 ```
 
-列同士の演算
+列同士の演算、新たな列の追加
 ====
-- 結構忘れる
+- ちょいちょい忘れる
 ```python
 amounts["diff"] = amounts["amount_x"] - amounts["amount_y"]
 ```
@@ -59,6 +95,7 @@ from collections import Counter
 func = lambda x:Counter(x).most_common()[0][0] # 最頻値
 tmp = df_receipt.groupby("store_cd")
 tmp = tmp.agg({"product_cd":func}) # funcを渡せる
+# 間は「:」です。「,」だとエラーになります。
 
 tmp = tmp.agg({"amount":"sum"})
 # その他に "max" , "min" , "mean" , "median" が使える
