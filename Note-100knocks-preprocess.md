@@ -1,6 +1,6 @@
 ダミー変数化(pd.get_dummies)
 ===
-- 指定のSeriesの変数値を疎なダミー変数列にする
+- 指定のSeriesの変数値を疎なダミー変数列にする.
 ```python
 tmp = pd.get_dummies(df_customer[["gender_cd"]])
 ```
