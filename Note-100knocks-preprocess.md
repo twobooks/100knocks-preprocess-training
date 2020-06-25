@@ -1,3 +1,10 @@
+ダミー変数化(pd.get_dummies)
+===
+- 指定のSeriesの変数値を疎なダミー変数列にする
+```python
+tmp = pd.get_dummies(df_customer[["gender_cd"]])
+```
+
 四分位とかbinsで分類する(pd.qcut,pd.cut)
 ===
 - 値に応じて任意のコードを割り振るとかの操作は、Series.apply(lambda x:func(x))で任意の関数を適用すればよい
