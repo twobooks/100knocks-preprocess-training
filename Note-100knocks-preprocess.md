@@ -1,5 +1,18 @@
+四分位とかbinsで分類する(pd.qcut,pd.cut)
+===
+- 値に応じて任意のコードを割り振るとかの操作は、Series.apply(lambda x:func(x))で任意の関数を適用すればよい
+- 四分位とか所定のbinsに分けられれば良ければpd.qcut(),pd.cut()が使える
+```python
+# 四分位分割
+df_tmp["qtile"],bins = pd.qcut(df_hoge["some"],4,retbins = True)
+# bins分割
+df_tmp["bins"],bins = pd.qcut(df_hoge["some"],bins = [0,10,20,30,40,50,60,np.inf],right=False)
+```
+
 strアクセサ,dtアクセサでSeriesを処理する
 ===
+- Sereisの要素にapply()で関数を適用できる
+- Sereisの要素にmap()を適用する場合、引数に辞書dictを指定すると要素の置換となる。
 ```python
 filter = df_store["tel_no"].str.contains("^[0-9]{3}-[0-9]{3}-[0-9]{4}$",regex = True)
 df_store[filter]
@@ -7,6 +20,9 @@ df_store[filter]
 pd.to_datetime(df_receipt["sales_epoch"],unit='s',origin='unix').dt.strftime("%m")
 # queryでも使える
 tmp = df_receipt.query("not customer_id.str.startswith('Z')",engine="python")
+
+# map()でdict渡すと置換えできる
+tmp = df_customer["address"].str[:3].map({"埼玉県":11,"千葉県":12,"東京都":13,"神奈川":14})
 ```
 
 重複するデータの処理(duplicated)
