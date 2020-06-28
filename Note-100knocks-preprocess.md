@@ -1,8 +1,31 @@
+np関数の適用  
+(np.floor, np.ceil, np.round,  
+np.log10, np.log,   
+np.nanmean, np.nanmedian)
+===
+- math.floorとかはNaNあるとエラーになるけどnp関数ならNaNをスルーしてくれる
+```python
+pricemean = np.round(np.nanmean(df_product["unit_price"]))
+```
+
 ダミー変数化(pd.get_dummies)
 ===
 - 指定のSeriesの変数値を疎なダミー変数列にする.
 ```python
 tmp = pd.get_dummies(df_customer[["gender_cd"]])
+```
+
+四分位を取得する(np.percentile,somedf.quantile)
+===
+- np.percentileでダイレクトに四分位とか取得できる
+- somedf.quantileではリストで取得できる
+```python
+# 四分位取得
+q25 = np.percentile(somedf["hoge"],q=25)
+q75 = np.percentile(somedf["hoge"],q=75)
+# 四分位をリストで取得する
+qts = somedf["hoge"].quantile([0,0.25, 0.5, 0.75, 1.0])
+qts = list(qts["hoge"])
 ```
 
 四分位とかbinsで分類する(pd.qcut,pd.cut)
