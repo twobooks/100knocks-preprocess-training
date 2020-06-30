@@ -1,9 +1,83 @@
+欠損値処理  
+(isnull, dropna, fillna, isnan)
+===
+- 欠損値の有無の確認、削除、補完、条件処理
+```python
+# 欠損値の数の確認
+df_product.isnull().sum()
+# 欠損値の削除
+df_product_1 = df_product.dropna()
+# 欠損値の補完
+df_product_2 = df_product.fillna({"unit_price":pricemean,"unit_cost":costmean})
+# 欠損値の補充（任意の関数）
+func = lambda x:x[1] if np.isnan(x[0]) else x[0]
+df_product_4["unit_price"] = df_product_4[["unit_price","price_median"]].apply(func,axis=1)
+
+```
+
+外れ値処理
+===
+手法の一例
+- 標準偏差による除外
+- 「第一四分位数-1.5×IQR」よりも下回るもの、または「第三四分位数+1.5×IQR」を超えるものの除外
+
+データサンプリング
+===
+- sampleはランダムサンプリング
+- train_test_splitは層化抽出（元データのデータ割合を維持したままデータサンプリングする）
+```python
+df_customer.sample(frac=0.01)[:10] # 1%抽出
+
+from sklearn.model_selection import train_test_split
+# train_test_splitを使って層化抽出(10%)
+train,test = train_test_split(df_customer,test_size=0.1,stratify=df_customer["gender"])
+```
+
+日時型の処理と計算  
+(datetimeの計算, relativedelta)
+===
+- relativedeltaを使うのが無難
+- シンプルな計算だと日数ベースぽい？
+```python
+tmp["date1"] = pd.to_datetime(pd_hoge["date"].astype("str"))
+tmp["date2"] = pd.to_datetime(pd_hoge["date"])
+# 日数を得る
+tmp["elapsed_date"] = tmp["date1"] - tmp["date2"]
+# 月数を得る
+func1 = lambda x:relativedelta(x[0],x[1]).years*12+relativedelta(x[0],x[1]).months
+tmp["elapsed_month"] = tmp[["date1","date2"]].apply(func1,axis=1)
+# 年数を得る
+func2 = lambda x:relativedelta(x[0],x[1]).years
+tmp["elapsed_year"] = tmp[["date1","date2"]].apply(func2,axis=1)
+# 秒数を得る
+func3 = lambda x:x[0].timestamp() - x[1].timestamp()
+tmp["elapsed_sec"] = tmp[["date1","date2"]].apply(func3,axis=1)
+# 曜日の処理
+func4 = lambda x:x - relativedelta(days=x.weekday())
+tmp["monday"] = tmp["date"].apply(func4)
+```
+
+preprocessing(標準化、正規化)の適用  
+(preprocessing.scale, .minmax_scale)
+===
+- preprocessing.scaleは平均0、標準偏差1で標準化
+- preprocessing.minmax_scaleは最小値0、最大値1で正規化
+```python
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
+
+# sklearnのpreprocess.scaleを利用すると各データの標本標準偏差を得られる
+tmp["amount_ss"] = preprocessing.scale(tmp["amount"])
+tmp["amount_mm"] = preprocessing.minmax_scale(tmp["amount"])
+```
+
 np関数の適用  
 (np.floor, np.ceil, np.round,  
 np.log10, np.log,   
 np.nanmean, np.nanmedian)
 ===
 - math.floorとかはNaNあるとエラーになるけどnp関数ならNaNをスルーしてくれる
+- Series.mean(skipna = True)とかもできる
 ```python
 pricemean = np.round(np.nanmean(df_product["unit_price"]))
 ```
@@ -19,10 +93,12 @@ tmp = pd.get_dummies(df_customer[["gender_cd"]])
 ===
 - np.percentileでダイレクトに四分位とか取得できる
 - somedf.quantileではリストで取得できる
+- IQRは第一四分位と第三四分位の差である
 ```python
 # 四分位取得
 q25 = np.percentile(somedf["hoge"],q=25)
 q75 = np.percentile(somedf["hoge"],q=75)
+iqr = q75-q25
 # 四分位をリストで取得する
 qts = somedf["hoge"].quantile([0,0.25, 0.5, 0.75, 1.0])
 qts = list(qts["hoge"])
@@ -47,7 +123,9 @@ strアクセサ,dtアクセサでSeriesを処理する
 filter = df_store["tel_no"].str.contains("^[0-9]{3}-[0-9]{3}-[0-9]{4}$",regex = True)
 df_store[filter]
 
+# unix秒の場合
 pd.to_datetime(df_receipt["sales_epoch"],unit='s',origin='unix').dt.strftime("%m")
+
 # queryでも使える
 tmp = df_receipt.query("not customer_id.str.startswith('Z')",engine="python")
 
