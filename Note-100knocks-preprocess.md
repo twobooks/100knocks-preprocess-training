@@ -1,3 +1,45 @@
+ソート(sort_values)
+===
+- sort_valuesでキーを指定してソートできる
+- 複数キーを指定してソートできる
+- 第1キーは降順、第2は昇順とかって指定できる
+- drop_duplicates(重複行の削除)をkeep="first" を指定して使用する場合にソート重要
+```python
+tmp = tmp.sort_values(["amount","customer_id"],ascending=[False,True])
+df_customer_u = tmp.drop_duplicates(subset=["customer_name","postal_cd"],keep="first")
+```
+
+ジオデータの処理(緯度経度、距離の演算)
+===
+- 郵便番号から緯度経度を取り出したりできるぽい
+- 経度（longitude）、緯度（latitude）
+- ジオデータからの距離の求め方は以下の通り
+```python
+def calc_geo_distance(x1,y1,x2,y2):
+    x1 = math.radians(x1)
+    x2 = math.radians(x2)
+    y1 = math.radians(y1)
+    y2 = math.radians(y2)
+    distance = 6371*math.acos(math.sin(y1)*math.sin(y2)+math.cos(y1)*math.cos(y2)*math.cos(x1-x2))
+    return distance
+
+tmp["distance"] = tmp[["longitude_x","latitude_x","longitude_y","latitude_y"]].apply(
+    lambda x:calc_geo_distance(x[0],x[1],x[2],x[3]),axis=1
+)
+
+```
+
+dfの結合  
+(pd.merge)
+===
+- pd.merge(df_left,df_right,how="inner",on="keycol")で onの列をキーにして積集合結合、和集合結合、左外部結合とかできる
+```python
+# onに指定するcolの名前が違ってもleft_on,right_onで指定できる
+# 当然ながらキーの内容は同種のものでないと機能しない
+tmp = pd.merge(df_customer_1,df_store,how="inner",left_on="application_store_cd",right_on="store_cd")
+
+```
+
 欠損値処理  
 (isnull, dropna, fillna, isnan)
 ===
