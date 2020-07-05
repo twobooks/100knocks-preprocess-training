@@ -1,3 +1,89 @@
+データの保存と読み込み  
+(to_csv,read_csv,read_table)
+===
+```python
+# csv,UTF-8,index列含めず,header含めて保存
+df_product_full.to_csv('../data/P_df_product_full_UTF-8_header.csv', encoding='UTF-8', index=False,header=True)
+# 同上。Excelでの文字化け防止版
+df_product_full.to_csv('data/df_product_UTF-8_header.csv',encoding='utf_8_sig',index=False)
+
+# csv,UTF-8,headerありを読み込み
+df_tmp = pd.read_csv('../data/P_df_product_full_UTF-8_header.csv')
+df_tmp.head(10)
+# header無い場合は header=None を指定
+
+# tsvにもできる
+df_product_full.to_csv('data/df_product_full_UTF-8_header.tsv',sep="\t",encoding='UTF-8',index=False,header=True)
+
+# tsvの読み込み
+tmp = pd.read_table('data/df_product_full_UTF-8_header.tsv',encoding='UTF-8')
+tmp.head(10)
+```
+
+データの正規化、非正規化  
+===
+- 正規化とは、データベース内のデータを整理するプロセスのこと。 
+- データを保護するために設計されたルールに従ってテーブルを作成し、それらのテーブル間のリレーションシップを確立すること、及び、冗長性と一貫性のない依存関係を排除することで、データベースの柔軟性を高めることが含まれる。
+- 第１正規化（重複した列の排除）
+- 第２正規化（依存関係のある列の外部化）
+- 第３正規化（推移的関数従属と呼ばれる従属関係の分離・外部化)
+```python
+# 正規化
+df_gender = df_customer[['gender_cd', 'gender']].drop_duplicates()
+df_customer_s = df_customer.drop(columns='gender')
+
+# 非正規化
+df_product_full = pd.merge(df_product,
+    df_category[['category_small_cd',
+    'category_major_name',
+    'category_medium_name',
+    'category_small_name']], 
+    how = 'inner', on = 'category_small_cd')
+```
+
+アンダーサンプリング
+===
+- 訓練データが不均衡データだと回答が多い方を予測しがちになるので、多い方のデータをアンダーサンプリング（減らす）すると汎用性が高まる
+```python
+from imblearn.under_sampling import RandomUnderSampler
+
+rs = RandomUnderSampler(random_state=71)
+
+df_sample, _ = rs.fit_sample(df_tmp, df_tmp.buy_flg)
+```
+
+時系列データの前処理  
+(時系列データインデックス,resample)
+===
+- 時系列データは日付データindexを使うと便利
+- 特にresampleによる集計が便利
+```python
+tmp = df_receipt.copy()
+tmp["sales_date"] = pd.to_datetime(tmp["sales_ymd"].astype("str"))
+tmp = tmp.set_index("sales_date")
+tmp = tmp[["amount"]].resample("M").sum()
+
+trains = [0]*3
+tests = [0]*3
+for i in range(3):
+    trains[i] = tmp[i:12+i]
+    tests[i] = tmp[12+i:18+i]
+
+# 時系列データはランダムサンプリングすると未来のデータをカンニングしてしまうので注意が必要
+def split_data(target_df, start, train_size, test_size, slide_window):
+    train_start = start * slide_window
+    test_start = train_start + train_size
+    return df[train_start : test_start], df[test_start : test_start + test_size]
+
+```
+
+学習用・テスト用データの分割(train_test_split)
+===
+```python
+from sklearn.model_selection import train_test_split
+train,test = train_test_split(tmp,test_size=0.2,random_state=71)
+```
+
 ソート(sort_values)
 ===
 - sort_valuesでキーを指定してソートできる
